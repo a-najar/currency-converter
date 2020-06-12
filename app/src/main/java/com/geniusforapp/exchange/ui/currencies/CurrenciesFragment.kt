@@ -32,6 +32,7 @@ class CurrenciesFragment : Fragment(R.layout.fragment_currencies) {
 
     private fun initActions() {
         cardHeader.setOnClickListener { listCurrencies.smoothScrollToPosition(0) }
+        buttonRetry.setOnClickListener { viewModel.retry() }
     }
 
     private fun initObservers() {
@@ -55,6 +56,8 @@ class CurrenciesFragment : Fragment(R.layout.fragment_currencies) {
     }
 
     private fun showOrHideLoading(loading: Boolean) {
+        if (!loading) contentLayout.visibility = View.VISIBLE
+        if (!loading) errorLayout.visibility = View.GONE
         if (loading) progressBar.show() else progressBar.hide()
     }
 

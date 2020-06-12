@@ -15,11 +15,12 @@ import java.util.concurrent.TimeUnit
 
 class CurrenciesViewModel(
     getCurrencyRatesUseCase: GetCurrencyRatesUseCase = GetCurrencyRatesUseCase(),
-    io: Scheduler = Schedulers.io(),
-    main: Scheduler = AndroidSchedulers.mainThread(),
+    private val io: Scheduler = Schedulers.io(),
+    private val main: Scheduler = AndroidSchedulers.mainThread(),
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
 ) : ViewModel() {
     private val timer: BehaviorSubject<Long> = BehaviorSubject.create()
+    private val retry: BehaviorSubject<Boolean> = BehaviorSubject.create()
 
     val currencyLiveData: LiveData<List<Rate>>
     val errorLiveData: LiveData<Throwable>
@@ -34,24 +35,47 @@ class CurrenciesViewModel(
         timerLiveData = MutableLiveData()
         baseLiveData = MutableLiveData()
 
+        initTimerObserver()
+        getRates(
+            getCurrencyRatesUseCase,
+            currencyLiveData,
+            errorLiveData,
+            baseLiveData,
+            loaderLiveData,
+            timerLiveData
+        )
+
+    }
+
+    private fun getRates(
+        getCurrencyRatesUseCase: GetCurrencyRatesUseCase,
+        currencyLiveData: MutableLiveData<List<Rate>>,
+        errorLiveData: MutableLiveData<Throwable>,
+        baseLiveData: MutableLiveData<String>,
+        loaderLiveData: MutableLiveData<Boolean>,
+        timerLiveData: MutableLiveData<Long>
+
+    ) {
+        getCurrencyRatesUseCase()
+            .toObservable()
+            .subscribeOn(io)
+            .repeatWhen { timer }
+            .doOnError { errorLiveData.postValue(it) }
+            .retryWhen { retry }
+            .doAfterNext { startCountDown(timerLiveData) }
+            .doOnNext { baseLiveData.postValue(it.first().base) }
+            .doOnSubscribe { loaderLiveData.postValue(true) }
+            .doOnNext { loaderLiveData.postValue(false) }
+            .observeOn(main)
+            .subscribe(currencyLiveData::postValue, errorLiveData::postValue)
+            .also { compositeDisposable.add(it) }
+    }
+
+    private fun initTimerObserver() {
         Observable.interval(TIME_INTERVAL, TimeUnit.SECONDS)
             .repeat()
             .subscribeOn(io)
             .subscribe(timer)
-
-        getCurrencyRatesUseCase()
-            .toObservable()
-            .repeatWhen { timer }
-            .subscribeOn(io)
-            .observeOn(main)
-            .doOnSubscribe { loaderLiveData.postValue(true) }
-            .doAfterNext { loaderLiveData.postValue(false) }
-            .doAfterNext { startCountDown(timerLiveData) }
-            .doOnNext { baseLiveData.postValue(it.first().base) }
-            .subscribe(currencyLiveData::postValue, errorLiveData::postValue)
-            .also { compositeDisposable.add(it) }
-
-
     }
 
     private fun startCountDown(timerLiveData: MutableLiveData<Long>) {
@@ -64,6 +88,10 @@ class CurrenciesViewModel(
             .also { compositeDisposable.add(it) }
     }
 
+
+    fun retry() {
+        retry.onNext(true)
+    }
 
     override fun onCleared() {
         compositeDisposable.clear()
