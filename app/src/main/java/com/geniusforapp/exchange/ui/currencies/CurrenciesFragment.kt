@@ -14,6 +14,7 @@ import com.geniusforapp.exchange.R
 import com.geniusforapp.exchange.domain.entities.HttpCallFailureException
 import com.geniusforapp.exchange.domain.entities.NoNetworkException
 import com.geniusforapp.exchange.domain.entities.ServerUnreachableException
+import kotlinx.android.synthetic.main.content_fragment_currencies.*
 import kotlinx.android.synthetic.main.fragment_currencies.*
 
 
@@ -34,10 +35,9 @@ class CurrenciesFragment : Fragment(R.layout.fragment_currencies) {
     }
 
     private fun initObservers() {
-        viewModel.currencyLiveData.observe(viewLifecycleOwner,
-            Observer {
-                currenciesAdapter.submitList(it)
-            })
+        viewModel.currencyLiveData.observe(viewLifecycleOwner, Observer {
+            currenciesAdapter.submitList(it)
+        })
 
         viewModel.errorLiveData.observe(viewLifecycleOwner, Observer { showError(it) })
 
@@ -66,11 +66,23 @@ class CurrenciesFragment : Fragment(R.layout.fragment_currencies) {
         }
     }
 
-    private fun showFailToRequest() {}
+    private fun showFailToRequest() {
+        contentLayout.visibility = View.GONE
+        errorLayout.visibility = View.VISIBLE
+        textMessage.text = getString(R.string.error_message_fail_to_request)
+    }
 
-    private fun showNotRespondingError() {}
+    private fun showNotRespondingError() {
+        contentLayout.visibility = View.GONE
+        errorLayout.visibility = View.VISIBLE
+        textMessage.text = getString(R.string.error_message_server_not_responding)
+    }
 
-    private fun showNoInternet() {}
+    private fun showNoInternet() {
+        contentLayout.visibility = View.GONE
+        errorLayout.visibility = View.VISIBLE
+        textMessage.text = getString(R.string.error_message_no_internet)
+    }
 
     private fun initList() {
         currenciesAdapter.onRateClicked = {

@@ -8,4 +8,8 @@
     <string name="input_to_amount">To amount %s</string>
     <string name="button_convert">Convert</string>
     <string name="title_converter">1 %1$s = %2$s</string>
+    <string name="error_message_fail_to_request">Fail to request the server</string>
+    <string name="error_message_server_not_responding">Sorry but it\'s look like server are not responding</string>
+    <string name="error_message_no_internet">Please check you internet connection</string>
+    <string name="button_retry">Retry</string>
 </resources>
